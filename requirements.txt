@@ -41,7 +41,6 @@ idna==2.10
 imageio==2.1.2
 imageio-ffmpeg==0.4.8
 iniconfig==2.0.0
-instabot==0.117.0
 InstagramAPI==1.0.2
 instagrapi==1.16.30
 instapi==0.1.4
