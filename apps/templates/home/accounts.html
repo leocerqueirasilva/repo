@@ -1,0 +1,52 @@
+<table id="accounts-table">
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="accounts-table-body">
+    
+  </tbody>
+</table>
+
+<script>
+  // Get the table body element
+  const tableBody = document.querySelector("#accounts-table-body");
+
+  // Fetch the accounts data from the server
+  fetch("/get_accounts")
+    .then(response => response.json())
+    .then(accounts => {
+      // Loop through the accounts data and create a new row for each account
+      accounts.forEach(account => {
+        const row = document.createElement("tr");
+        const usernameCell = document.createElement("td");
+        usernameCell.innerText = account.username;
+        row.appendChild(usernameCell);
+        
+        // Create a delete button for each account
+        const deleteButton = document.createElement("button");
+        deleteButton.innerText = "Delete";
+        deleteButton.addEventListener("click", () => {
+          // Send a DELETE request to the server with the username of the account
+          fetch(`/delete_account/${account.username}`, { method: "DELETE" })
+            .then(response => {
+              if (response.ok) {
+                // Remove the row from the table
+                row.remove();
+                console.log(`Account ${account.username} deleted`);
+              } else {
+                console.error("Error deleting account");
+              }
+            })
+            .catch(error => console.error(error));
+        });
+        
+        const actionsCell = document.createElement("td");
+        actionsCell.appendChild(deleteButton);
+        row.appendChild(actionsCell);
+        tableBody.appendChild(row);
+      });
+    });
+</script>

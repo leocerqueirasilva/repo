@@ -1,0 +1,28 @@
+<form id="add-account-form">
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username">
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password">
+    <button type="submit">Add Account</button>
+  </form>
+  
+  <script>
+    const form = document.getElementById('add-account-form');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const data = {username: username, password: password};
+      fetch('/add_account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then((response) => {
+        console.log(response);
+      });
+    });
+  </script>
+  

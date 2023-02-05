@@ -1,0 +1,37 @@
+<form id="add-account-form">
+  <label for="username">Username:</label>
+  <input type="text" id="username" name="username">
+  <br>
+  <label for="password">Password:</label>
+  <input type="password" id="password" name="password">
+  <br>
+  <label for="challenge">Challenge method:</label>
+  <select id="challenge" name="challenge">
+    <option value="TWO_FACTOR">Two factor authentication</option>
+    <option value="CAPTCHA">Captcha</option>
+  </select>
+  <br>
+  <button type="submit">Add Account</button>
+</form>
+
+<script>
+  const form = document.querySelector("#add-account-form");
+  form.addEventListener("submit", function(e) {
+    e.preventDefault();
+    var username = document.querySelector("#username").value;
+    var password = document.querySelector("#password").value;
+    var challenge = document.querySelector("#challenge").value;
+    var new_account = { "new_username": username, "new_password": password, "challenge": challenge };
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/add_account");
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhr.send(JSON.stringify(new_account));
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            console.log("Account added successfully");
+        } else {
+            console.log("Error adding account: " + xhr.response);
+        }
+    };
+});
+</script>

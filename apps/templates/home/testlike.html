@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <button id="like-button">Like Media</button>
+
+</body>
+<script>
+  async function callLike() {
+    const response = await fetch('/call_like', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        media_url: 'https://www.instagram.com/p/CoAwXMlAOB1'
+      })
+    });
+    const result = await response.text();
+    console.log(result);
+  }
+  
+  document.getElementById("like-button").addEventListener("click", callLike);
+  </script>
+</html>
