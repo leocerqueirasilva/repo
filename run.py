@@ -24,6 +24,7 @@ from instagrapi.mixins.challenge import ChallengeChoice
 from instagrapi.mixins.challenge import ChallengeRequired
 from instagrapi.mixins.challenge import ChallengeResolveMixin
 import instagrapi
+import os
 
 from instagrapi.exceptions import (
     ChallengeError,
@@ -297,7 +298,6 @@ def testlike():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=PORT)
-    app.run(debug=True)
+     app.run(debug=True, port=os.getenv("PORT", default=5000))
     
 
