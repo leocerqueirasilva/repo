@@ -248,7 +248,7 @@ def like_stories():
 
 
 
-1
+
 
 ## Test like media
 

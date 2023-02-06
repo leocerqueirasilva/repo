@@ -182,8 +182,10 @@
           xhr.send(JSON.stringify(new_account));
           xhr.onload = function() {
               if (xhr.status === 200) {
+                  alert('Conta adicionada com sucesso')
                   console.log("Account added successfully");
               } else {
+                  alert('Erro ao adicionar conta')
                   console.log("Error adding account: " + xhr.response);
               }
           };
