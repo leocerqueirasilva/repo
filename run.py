@@ -235,12 +235,54 @@ def like_stories():
         id_storie = cl.story_pk_from_url(story_url)
         cl.story_like(id_storie)
         return jsonify({'message': 'success'})
+        
 
 
         
 
         
 
+@app.route("/test_vote", methods=['GET', 'POST'])
+def testvote():
+    # Login to Instagram
+    login_url = 'https://www.instagram.com/accounts/login/'
+    username = 'melissadorosario8310'
+    password = 'joaolucas11'
+    session = requests.Session()
+    session.headers.update({'Referer': 'https://www.instagram.com/',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36'})
+
+    # Get the CSRF token and the session ID
+    session.get('https://www.instagram.com/')
+    csrftoken = session.cookies.get_dict().get('csrftoken')
+    
+
+    # Login to Instagram
+    login_data = {'username': username, 'password': password}
+    session.headers.update({'X-CSRFToken': csrftoken})
+    login_response = session.post(login_url, data=login_data, allow_redirects=True)
+    print(login_response)
+    print(login_response.content)
+    if login_response.status_code == 200:
+        return "Vote submitted successfully!"
+    else:
+        return "Error submitting vote. Response code: {}".format(login_response.status_code)
+
+    """  # Vote in the poll
+    story_url = 'https://www.instagram.com/stories/livescore/3035819740852460379/'
+    poll_url = 'https://www.instagram.com/web/stories/17894204059062139/vote/'
+    poll_id = story_url.split('/')[-2]
+    vote_option = '1' # replace with the index of the desired vote option
+    vote_data = {'vote': vote_option}
+    session.headers.update({'Referer': story_url})
+    vote_response = session.post(poll_url, data=vote_data)
+    print(vote_response) 
+
+    # Check if the vote was successful
+    if vote_response.status_code == 200:
+        return "Vote submitted successfully!"
+    else:
+        return "Error submitting vote. Response code: {}".format(vote_response.status_code) """
 
 
 
