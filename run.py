@@ -37,12 +37,16 @@ from instagrapi.exceptions import (
     SelectContactPointRecoveryForm,
     SubmitPhoneNumberForm,
 )
-
-
-
+from flask import Flask, request
+import sendgrid
+import os
+from sendgrid.helpers.mail import Mail, Email, To, Content
+from flask_mail import Mail
+from flask_mail import Message
 
 
 app = Flask(__name__, template_folder='templates')
+mail = Mail(app)
 
 @app.route("/add_account")
 def add_page_account():
@@ -129,8 +133,19 @@ def delete_account(username):
     return jsonify({'message': 'Account deleted'}), 200
 
 
+app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
+app.config['MAIL_PORT'] = 2525
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USERNAME'] = 'leocerqueirasilva67@gmail.com'
+app.config['MAIL_PASSWORD'] = 'Dork8421!wowo2012'
 
-
+@app.route('/send_email', methods=['GET', 'POST'])
+def send_email():
+    msg = Message('Teste de email',
+                  sender='leocerqueirasilva67@outlook.com',
+                  recipients=['leocerqueirasilva@outlook.com'])
+    msg.body = 'Este é um email de teste enviado com Flask-Mail e SendGrid'
+    mail.send(msg)
 
 
 
