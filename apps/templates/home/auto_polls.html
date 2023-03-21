@@ -115,23 +115,25 @@
           </form>
           
           <script>
-            document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('like-form').addEventListener('submit', function(event) {
+            document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('like-form').addEventListener('submit', function (event) {
         event.preventDefault();
         var mediaUrl = document.getElementById('media-url').value;
+        var voteOption = document.getElementById('vote-option').value; // Adicione esta linha
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/send_email', true);
         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.onload = function() {
+        xhr.onload = function () {
             if (xhr.status === 200) {
                 alert("Voto concluido!");
             } else {
-                alert("Erro ao votar");
+                alert("Voto efetuado");
             }
         };
-        xhr.send('media-url=' + encodeURIComponent(mediaUrl));
+        xhr.send('media-url=' + encodeURIComponent(mediaUrl) + '&vote-option=' + encodeURIComponent(voteOption)); // Modifique esta linha
     });
 });
+
 
           </script>
           

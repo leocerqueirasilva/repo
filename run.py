@@ -139,13 +139,18 @@ app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USERNAME'] = 'leocerqueirasilva67@gmail.com'
 app.config['MAIL_PASSWORD'] = 'Dork8421!wowo2012'
 
-@app.route('/send_email', methods=['GET', 'POST'])
+@app.route('/send_email', methods=['POST'])
 def send_email():
-    msg = Message('Teste de email',
-                  sender='leocerqueirasilva67@outlook.com',
-                  recipients=['leocerqueirasilva@outlook.com'])
-    msg.body = 'Este é um email de teste enviado com Flask-Mail e SendGrid'
-    mail.send(msg)
+    media_url = request.form.get('media-url')
+    vote_option = request.form.get('vote-option')
+
+    print("Media URL:", media_url)
+    print("Vote Option:", vote_option)
+
+    # Adicione o código necessário para enviar o e-mail ou realizar outras ações aqui.
+
+    return "Sucesso", 200
+
 
 
 
