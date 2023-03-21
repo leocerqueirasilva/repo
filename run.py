@@ -166,7 +166,7 @@ def send_email():
 
 
 
-#Comment menssage
+#Comment menssagee
 
 @app.route("/call_comment", methods=['POST'])
 def call_comment():
