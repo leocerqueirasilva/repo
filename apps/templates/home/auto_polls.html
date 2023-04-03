@@ -43,6 +43,8 @@
               <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
+                    <label for="num-accounts">Quantidade de contas:</label>
+                    <input type="number" id="num-accounts" name="num-accounts" min="1" class="form-control" required><br>
                     <label for="media-url">Media URL:</label>
                     <input type="text" id="media-url" name="media-url" class="form-control" placeholder="URL">
                   </div>
@@ -115,23 +117,24 @@
           </form>
           
           <script>
-            document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('like-form').addEventListener('submit', function (event) {
-        event.preventDefault();
-        var mediaUrl = document.getElementById('media-url').value;
-        var voteOption = document.getElementById('vote-option').value; // Adicione esta linha
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/send_email', true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                alert("Voto concluido!");
-            } else {
-                alert("Voto efetuado");
-            }
-        };
-        xhr.send('media-url=' + encodeURIComponent(mediaUrl) + '&vote-option=' + encodeURIComponent(voteOption)); // Modifique esta linha
-    });
+    event.preventDefault();
+    var mediaUrl = document.getElementById('media-url').value;
+    var voteOption = document.getElementById('vote-option').value;
+    var numAccounts = document.getElementById('num-accounts').value; // Adicione esta linha
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/send_email', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        alert("Voto concluido!");
+      } else {
+        alert("Voto efetuado");
+      }
+    };
+    xhr.send('media-url=' + encodeURIComponent(mediaUrl) + '&vote-option=' + encodeURIComponent(voteOption) + '&num-accounts=' + encodeURIComponent(numAccounts)); // Modifique esta linha
+  });
 });
 
 

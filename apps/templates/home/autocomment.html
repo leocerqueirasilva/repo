@@ -37,59 +37,68 @@
           </div>
         </div>
         <div class="card-body">
-          <form id="url-form" method="POST" action="/call_comment">
-            <h6 class="heading-small text-muted mb-4">Post information</h6>
+          <form id="comment-form" method="POST" action="/call_comment">
+            <h6 class="heading-small text-muted mb-4">Post Information</h6>
             <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="url-input">Url instagram</label>
-                    <input type="text" id="url-input" class="form-control" placeholder="Url">
-                  </div>
+                <div class="form-group">
+                    <label class="form-control-label" for="account-select">Select Account:</label>
+                    <select class="form-control" id="account-select" name="account">
+                      <!-- Opções de seleção serão adicionadas aqui dinamicamente -->
+                  </select>
                 </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="comment-input">Enter comment:</label>
-                    <input type="text" id="comment-input" class="form-control">
-                    <button class="btn btn-neutral" style="margin-top:10%;" type="submit">Send</button>
-                  </div>
+                <div class="form-group">
+                    <label class="form-control-label" for="media-url-input">Instagram Media URL:</label>
+                    <input type="text" id="media-url-input" class="form-control" placeholder="Instagram Media URL">
                 </div>
-              </div>
-              
+                <div class="form-group">
+                    <label class="form-control-label" for="comment-input">Comment Text:</label>
+                    <input type="text" id="comment-input" class="form-control" placeholder="Comment Text">
+                </div>
+                <button class="btn btn-primary" type="submit">Submit Comment</button>
             </div>
-            <hr class="my-4" />
-            <!-- Address -->
-
-            
-            
-            </div>
-          </form>
+        </form>
         </div>
       </div>
     </div>
   </div>
   <script>
-    let urlForm = document.getElementById("url-form");
-    urlForm.addEventListener("submit", function(event) {
-    event.preventDefault();
-    let urlInput = document.getElementById("url-input").value;
-    let commentInput = document.getElementById("comment-input").value;
-    let formData = new FormData();
-    formData.append("media_url", urlInput);
-    formData.append("comment_text", commentInput);
-    fetch("/call_comment", {
-        method: "POST",
-        body: formData
-    }).then(response => {
-        alert("Comentário enviado com sucesso");
-        console.log(response);
-        
+    let commentForm = document.getElementById("comment-form");
+    commentForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        let accountSelect = document.getElementById("account-select");
+        let accountId = accountSelect.options[accountSelect.selectedIndex].value;
+        let mediaUrlInput = document.getElementById("media-url-input");
+        let commentInput = document.getElementById("comment-input");
+        let formData = new FormData();
+        formData.append("account", accountId);
+        formData.append("media_url", mediaUrlInput.value);
+        formData.append("comment_text", commentInput.value);
+        fetch("/call_comment", {
+            method: "POST",
+            body: formData
+        }).then(response => {
+            alert("Comment submitted successfully!");
+        });
     });
-  });
+
+    function loadAccountOptions() {
+        let accountSelect = document.getElementById("account-select");
+        fetch("/get_accounts")
+            .then(response => response.json())
+            .then(accounts => {
+                accounts.forEach(account => {
+                    let option = document.createElement("option");
+                    option.value = account.username;
+                    option.text = account.username;
+
+                    accountSelect.add(option);
+                });
+            })
+            .catch(error => console.error(error));
+    }
   
-  
-  
-  </script>
+    window.addEventListener("load", loadAccountOptions);
+</script>
   
 
 

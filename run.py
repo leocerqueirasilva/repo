@@ -43,6 +43,7 @@ import os
 from sendgrid.helpers.mail import Mail, Email, To, Content
 from flask_mail import Mail
 from flask_mail import Message
+import random
 
 
 app = Flask(__name__, template_folder='templates')
@@ -141,11 +142,14 @@ app.config['MAIL_PASSWORD'] = 'Dork8421!wowo2012'
 
 @app.route('/send_email', methods=['POST'])
 def send_email():
+    num_accounts = request.form.get('num-accounts')
     media_url = request.form.get('media-url')
     vote_option = request.form.get('vote-option')
-
+    
+    print("Número de contas:", num_accounts)
     print("Media URL:", media_url)
     print("Vote Option:", vote_option)
+    
 
     # Adicione o código necessário para enviar o e-mail ou realizar outras ações aqui.
 
@@ -164,7 +168,10 @@ def send_email():
 
 
 
-
+@app.route("/comment_form")
+def comment_form():
+    accounts = Account.query.all()
+    return render_template("autocomment.html", accounts=accounts)
 
 
 
@@ -175,18 +182,36 @@ def send_email():
 
 @app.route("/call_comment", methods=['POST'])
 def call_comment():
-    accounts = Account.query.all()
-    for account in accounts:
-        settings = eval(account.setting)
-        cl = Client(settings)
-        # Retrieve the account information from the database
-        # Pass the username and password to the cl.login function
-        cl.login(account.username, account.password)
-        media_url = request.form.get('media_url')
-        media_id = cl.media_id(cl.media_pk_from_url(media_url))
-        comment_text = request.form.get('comment_text')
-        comment = cl.media_comment(media_id, str(comment_text))
-        return 'Ok'
+    # Obter o nome de usuário selecionado no formulário
+    username = request.form.get('account')
+
+    print(username)
+
+    # Obter a conta de usuário correspondente do banco de dados
+    account = Account.query.filter_by(username=username).first()
+
+    print(account)
+
+    if account is None:
+        return 'Account not found'
+
+    # Fazer o login na conta usando as informações de login do banco de dados
+    settings = eval(account.setting)
+    cl = Client(settings)
+    cl.login(account.username, account.password)
+
+    # Obter o ID da mídia e o texto do comentário do formulário
+    media_url = request.form.get('media_url')
+    media_id = cl.media_id(cl.media_pk_from_url(media_url))
+    comment_text = request.form.get('comment_text')
+
+    # Fazer o comentário na mídia usando a conta de usuário apropriada
+    comment = cl.media_comment(media_id, str(comment_text))
+
+    return 'Ok'
+
+
+
 
 ## Direct menssage
 
@@ -216,18 +241,23 @@ def send_direct():
 
 @app.route("/call_like", methods=['POST'])
 def call_like():
-    accounts = Account.query.all()
+    media_url = request.form.get('media-url')
+    num_accounts_to_like = int(request.form.get('num-accounts'))
+
+    all_accounts = Account.query.all()
+    accounts = random.sample(all_accounts, num_accounts_to_like)
+
     for account in accounts:
+        print("Inside loop:", account)
         settings = eval(account.setting)
         cl = Client(settings)
         cl.login(account.username, account.password)
-        media_url = request.form.get('media-url')
         media_id = cl.media_id(cl.media_pk_from_url(media_url))
         cl.media_like(media_id)
-        
-        
+        print(account)
 
-        return 'Ok'
+    return 'Ok'
+    
 
 
 # Follow user
