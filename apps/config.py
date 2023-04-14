@@ -30,9 +30,9 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = '{}://{}:{}@{}:{}/{}'.format(
         config('DB_ENGINE', default='postgresql'),
         config('DB_USERNAME', default='postgres'),
-        config('DB_PASS', default='w3IIai59ltQJuxFgnOke'),
-        config('DB_HOST', default='containers-us-west-24.railway.app'),
-        config('DB_PORT', default=7079),
+        config('DB_PASS', default='5vwuvQR3Fo2KJYWsnk8z'),
+        config('DB_HOST', default='containers-us-west-4.railway.app'),
+        config('DB_PORT', default=7069),
         config('DB_NAME', default='railway')
     )
 
