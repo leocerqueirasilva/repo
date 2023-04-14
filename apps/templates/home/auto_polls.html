@@ -144,9 +144,60 @@
          
         </div>
       </div>
+      
+
+      
+    </div>
+    <div class="card">
+      <div class="card-header border-0">
+        <h3 class="mb-0">Histórico de votos</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table align-items-center table-flush" id="vote-history-table">
+          <thead class="thead-light">
+            <tr>
+              <th>Data e Hora</th>
+              <th>URL da mídia</th>
+              <th>Opção de voto</th>
+              <th>Quantidade de contas</th>
+            </tr>
+          </thead>
+          <tbody id="vote-history-table-body">
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-  
+  <script>
+    const voteHistoryTableBody = document.querySelector("#vote-history-table-body");
+
+    fetch("/get_vote_history")
+      .then(response => response.json())
+      .then(voteHistory => {
+        voteHistory.forEach(record => {
+          const row = document.createElement("tr");
+
+          const timestampCell = document.createElement("td");
+          timestampCell.innerText = record.timestamp;
+          row.appendChild(timestampCell);
+
+          const mediaUrlCell = document.createElement("td");
+          mediaUrlCell.innerText = record.media_url;
+          row.appendChild(mediaUrlCell);
+
+          const voteOptionCell = document.createElement("td");
+          voteOptionCell.innerText = record.vote_option;
+          row.appendChild(voteOptionCell);
+
+          const numAccountsCell = document.createElement("td");
+          numAccountsCell.innerText = record.num_accounts;
+          row.appendChild(numAccountsCell);
+
+          voteHistoryTableBody.appendChild(row);
+        });
+      });
+
+</script>
   
 
   {% include "includes/footer.html" %}

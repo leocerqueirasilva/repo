@@ -4,6 +4,16 @@
 
 {% block content %}
 
+
+{% block javascripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+
+
+{% endblock javascripts %}
+
 <div class="header pb-6 d-flex align-items-center" 
      style="min-height: 500px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
   <!-- Mask -->
@@ -71,31 +81,91 @@
           
           <script>
             document.addEventListener('DOMContentLoaded', function() {
-                document.getElementById('like-form').addEventListener('submit', function(event) {
-                    event.preventDefault();
-                    var mediaUrl = document.getElementById('media-url').value;
-                    var numAccounts = document.getElementById('num-accounts').value;
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', '/call_like', true);
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    xhr.onload = function() {
-                        if (xhr.status === 200) {
-                            alert("Curtida realizada com sucesso!");
-                        } else {
-                            alert("Erro ao realizar curtida");
-                        }
-                    };
-                    xhr.send('media-url=' + encodeURIComponent(mediaUrl) + '&num-accounts=' + encodeURIComponent(numAccounts));
+        document.getElementById('like-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        var mediaUrl = document.getElementById('media-url').value;
+        var numAccounts = document.getElementById('num-accounts').value;
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/call_like', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                var progress = response.progress;
+                var total = response.total;
+                Swal.fire({
+                    title: 'Progresso das Curtidas',
+                    html: progress + '/' + total + ' curtidas',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
                 });
-            });
+            } else {
+                Swal.fire({
+                    title: 'Erro',
+                    text: 'Erro ao realizar curtida',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        };
+        xhr.send('media-url=' + encodeURIComponent(mediaUrl) + '&num-accounts=' + encodeURIComponent(numAccounts));
+    });
+});
+
         </script>
           
           
          
         </div>
       </div>
+      
+    </div>
+    <div class="card">
+      <div class="card-header border-0">
+        <h3 class="mb-0">Histórico de Solicitações</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table align-items-center table-flush" id="history-table">
+          <thead class="thead-light">
+            <tr>
+              <th>Data e Hora</th>
+              <th>URL da Mídia</th>
+              <th>Usuários que Curtiram</th>
+            </tr>
+          </thead>
+          <tbody id="history-table-body">
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
+  
+  <script>
+    const tableBody = document.querySelector("#history-table-body");
+  
+    fetch("/get_history_like")
+      .then(response => response.json())
+      .then(history => {
+        history.forEach(record => {
+          const row = document.createElement("tr");
+  
+          const timestampCell = document.createElement("td");
+          timestampCell.innerText = record.timestamp;
+          row.appendChild(timestampCell);
+  
+          const mediaUrlCell = document.createElement("td");
+          mediaUrlCell.innerText = record.media_url;
+          row.appendChild(mediaUrlCell);
+  
+          const numLikesCell = document.createElement("td");
+          numLikesCell.innerText = record.num_likes;
+          row.appendChild(numLikesCell);
+  
+          tableBody.appendChild(row);
+        });
+      });
+  </script>  
+  
   
   
 
@@ -106,6 +176,5 @@
 
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
-{% block javascripts %}{% endblock javascripts %}
+
 

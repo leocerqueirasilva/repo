@@ -15,10 +15,9 @@ from os.path import abspath
 from apps import db
 from flask_sqlalchemy import SQLAlchemy
 from flask import render_template
-from apps import db
 from sqlalchemy import create_engine
 from sqlalchemy.engine import reflection
-from apps.home.models import Account
+from apps.home.models import Account, LikeHistory, CommentHistory, FollowHistory, VoteHistory
 import requests
 from instagrapi.mixins.challenge import ChallengeChoice
 from instagrapi.mixins.challenge import ChallengeRequired
@@ -44,6 +43,10 @@ from sendgrid.helpers.mail import Mail, Email, To, Content
 from flask_mail import Mail
 from flask_mail import Message
 import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 
 
 app = Flask(__name__, template_folder='templates')
@@ -150,20 +153,137 @@ def send_email():
     print("Media URL:", media_url)
     print("Vote Option:", vote_option)
     
+    # Configurações do servidor SMTP da Hostinger
+    smtp_server = "smtp.hostinger.com"
+    smtp_port = 465
+    email_address = "polls@argoncertificate.shop"  # Substitua pelo seu endereço de email corporativo
+    email_password = "Dork8421!"  # Substitua pela senha do seu email corporativo
 
-    # Adicione o código necessário para enviar o e-mail ou realizar outras ações aqui.
+    
+    # Configuração da mensagem
+    subject = "Votação automática"
+    message = f"Votação automática realizada com sucesso.\nNúmero de contas: {num_accounts}\nURL da mídia: {media_url}\nOpção de voto: {vote_option}"
 
-    return "Sucesso", 200
+    msg = MIMEMultipart()
+    msg['From'] = email_address
+    msg['To'] = "leocerqueirasilva67@gmail.com"  # Substitua pelo e-mail do destinatário
+    msg['Subject'] = subject
+    msg.attach(MIMEText(message, 'plain', 'utf-8'))  # Adicione o parâmetro 'utf-8' aqui
+
+    try:
+        with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+            server.login(email_address, email_password)
+            server.sendmail(email_address, "leocerqueirasilva67@gmail.com", msg.as_string().encode('utf-8'))  # Adicione .encode('utf-8') aqui
+        print("E-mail enviado com sucesso.")
+    except Exception as e:
+        print("Erro ao enviar o e-mail:", e)
+        
+
+    # Após a solicitação bem-sucedida, adicione o registro ao histórico
+    history_record = VoteHistory(media_url=media_url, vote_option=vote_option, num_accounts=num_accounts)
+    db.session.add(history_record)
+    db.session.commit()
+
+    return jsonify(success=True)
+
+
+from flask import jsonify
+
+@app.route('/get_last_request_date')
+def get_last_request_date():
+
+    # Obtenha o último registro de cada tabela
+    last_like = LikeHistory.query.order_by(LikeHistory.timestamp.desc()).first()
+    last_comment = CommentHistory.query.order_by(CommentHistory.timestamp.desc()).first()
+    last_follow = FollowHistory.query.order_by(FollowHistory.created_at.desc()).first()
+    last_vote = VoteHistory.query.order_by(VoteHistory.timestamp.desc()).first()
+
+    # Obtenha o carimbo de data/hora de cada último registro
+    last_like_timestamp = last_like.timestamp if last_like else None
+    last_comment_timestamp = last_comment.timestamp if last_comment else None
+    last_follow_timestamp = last_follow.created_at if last_follow else None
+    last_vote_timestamp = last_vote.timestamp if last_vote else None
+
+    # Encontre a data mais recente entre os registros
+    last_request_date = max(filter(None, [last_like_timestamp, last_comment_timestamp, last_follow_timestamp, last_vote_timestamp]))
+    print(last_request_date)
+    # Retorne a data da última solicitação como uma resposta JSON
+    return jsonify(last_request_date=last_request_date.isoformat())
+
+    
+
+@app.route('/get_total_requests')
+def get_total_requests():
+    # Obtenha o número total de solicitações de cada tabela
+    total_likes = LikeHistory.query.count()
+    total_comments = CommentHistory.query.count()
+    total_follows = FollowHistory.query.count()
+    total_votes = VoteHistory.query.count()
+
+    # Some todos os totais
+    total_requests = total_likes + total_comments + total_follows + total_votes
+
+    # Retorne a soma total como uma resposta JSON
+    return jsonify(total_requests=total_requests)
+
+    
+
+@app.route('/get_vote_history', methods=['GET'])
+def get_vote_history():
+    vote_history = VoteHistory.query.order_by(VoteHistory.timestamp.desc()).all()
+    return jsonify([{
+        'id': record.id,
+        'timestamp': record.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+        'media_url': record.media_url,
+        'vote_option': record.vote_option,
+        'num_accounts': record.num_accounts
+    } for record in vote_history])
 
 
 
+@app.route('/get_history_like', methods=['GET'])
+def get_history():
+    history_records = LikeHistory.query.order_by(LikeHistory.timestamp.desc()).all()
+    history_data = []
+
+    for record in history_records:
+        history_data.append({
+            'timestamp': record.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'media_url': record.media_url,
+            'num_likes': record.num_accounts
+        })
+
+    return jsonify(history_data)
 
 
+@app.route("/get_history_comment", methods=['GET'])
+def get_comment_history():
+    history = CommentHistory.query.order_by(CommentHistory.timestamp.desc()).all()
+    history_list = []
+    for record in history:
+        history_list.append({
+            'timestamp': record.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            'media_url': record.media_url,
+            'num_comments': record.num_comments,
+            'comment_text': record.comment_text
+        })
+
+    return jsonify(history_list)
 
 
+@app.route("/get_history_follow", methods=['GET'])
+def get_history_follow():
+    history = FollowHistory.query.order_by(FollowHistory.created_at.desc()).all()
+    history_list = []
 
+    for record in history:
+        history_list.append({
+            'timestamp': record.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'target_username': record.target_username,
+            'num_followers': record.num_followers
+        })
 
-
+    return jsonify(history_list)
 
 
 
@@ -182,33 +302,33 @@ def comment_form():
 
 @app.route("/call_comment", methods=['POST'])
 def call_comment():
-    # Obter o nome de usuário selecionado no formulário
-    username = request.form.get('account')
-
-    print(username)
-
-    # Obter a conta de usuário correspondente do banco de dados
-    account = Account.query.filter_by(username=username).first()
-
-    print(account)
-
-    if account is None:
-        return 'Account not found'
-
-    # Fazer o login na conta usando as informações de login do banco de dados
-    settings = eval(account.setting)
-    cl = Client(settings)
-    cl.login(account.username, account.password)
-
-    # Obter o ID da mídia e o texto do comentário do formulário
+    accounts = json.loads(request.form.get('accounts'))
     media_url = request.form.get('media_url')
-    media_id = cl.media_id(cl.media_pk_from_url(media_url))
     comment_text = request.form.get('comment_text')
+    progress = json.loads(request.form.get('progress'))
 
-    # Fazer o comentário na mídia usando a conta de usuário apropriada
-    comment = cl.media_comment(media_id, str(comment_text))
+    for username in accounts:
+        account = Account.query.filter_by(username=username).first()
+        if account:
+            settings = eval(account.setting)
+            cl = Client(settings)
+            cl.login(account.username, account.password)
+            media_id = cl.media_id(cl.media_pk_from_url(media_url))
+            cl.media_comment(media_id, comment_text)
 
-    return 'Ok'
+    if progress == 0:
+        # Adicionando o registro ao histórico de comentários
+        history_record = CommentHistory(
+            media_url=media_url,
+            num_comments=len(accounts),
+            comment_text=comment_text
+        )
+        db.session.add(history_record)
+        db.session.commit()
+
+    return jsonify(success=True)
+
+
 
 
 
@@ -247,32 +367,50 @@ def call_like():
     all_accounts = Account.query.all()
     accounts = random.sample(all_accounts, num_accounts_to_like)
 
+    progress = 0
     for account in accounts:
-        print("Inside loop:", account)
         settings = eval(account.setting)
         cl = Client(settings)
         cl.login(account.username, account.password)
         media_id = cl.media_id(cl.media_pk_from_url(media_url))
         cl.media_like(media_id)
+        progress += 1
         print(account)
 
-    return 'Ok'
+    # Após a solicitação de curtidas bem-sucedida, adicione o registro ao histórico
+    history_record = LikeHistory(media_url=media_url, num_accounts=num_accounts_to_like)
+    db.session.add(history_record)
+    db.session.commit()
+
+    return jsonify(progress=progress, total=num_accounts_to_like)
+
     
 
 
-# Follow user
 @app.route("/user_follow", methods=['POST'])
 def user_follow():
-    
+    num_followers = int(request.form.get('num-followers'))
+    username = request.form.get('username')
+
     accounts = Account.query.all()
-    for account in accounts:
+    selected_accounts = random.sample(accounts, min(num_followers, len(accounts)))
+
+    progress = 0
+    for account in selected_accounts:
         settings = eval(account.setting)
         cl = Client(settings)
         cl.login(account.username, account.password)
-        username = request.form.get('username')
         user_id = cl.user_id_from_username(username)
         follow = cl.user_follow(int(user_id))
-        return 'Ok'
+        progress += 1
+        print(account)
+
+    # Após a solicitação de seguir usuário bem-sucedida, adicione o registro ao histórico
+    history_record = FollowHistory(target_username=username, num_followers=num_followers)
+    db.session.add(history_record)
+    db.session.commit()
+
+    return jsonify(progress=progress, total=num_followers)
 
 @app.route("/like_stories", methods=['POST'])
 def like_stories():

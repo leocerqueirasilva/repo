@@ -4,6 +4,14 @@
 
 {% block content %}
 
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock javascripts %}
+
+
 <div class="header pb-6 d-flex align-items-center" 
      style="min-height: 500px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
   <!-- Mask -->
@@ -43,30 +51,49 @@
               <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
-                    <input type="text" id="username" name="username" class="form-control" placeholder="Username">
-                    <button class="btn btn-neutral" style="margin-top:10%;" type="submit">Follow</button>
+                      <label for="num-followers">Quantidade de seguidores:</label>
+                      <input type="number" id="num-followers" name="num-followers" min="1" class="form-control" required><br>
+                      <label for="username">Username:</label>
+                      <input type="text" id="username" name="username" class="form-control" placeholder="Username">
+                      <button class="btn btn-neutral" style="margin-top:10%;" type="submit">Follow</button>
                   </div>
-                </div>
+              </div>
+              
                 <script>
                   function followUser(event) {
-                    event.preventDefault();
-                    var username = document.getElementById("username").value;
-                
-                    // Make the AJAX request
-                    var xhr = new XMLHttpRequest();
-                    xhr.open("POST", "/user_follow", true);
-                    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-                    xhr.send("username=" + username);
-                
-                    // Handle the response
-                    xhr.onreadystatechange = function() {
-                      if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                        // Do something with the response, if needed
-                        alert('Perfil seguido');
-                        console.log(xhr.responseText);
-                      }
-                    };
-                  }
+                  event.preventDefault();
+                  var username = document.getElementById("username").value;
+                  var numFollowers = document.getElementById("num-followers").value;
+
+                  // Make the AJAX request
+                  var xhr = new XMLHttpRequest();
+                  xhr.open("POST", "/user_follow", true);
+                  xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                  xhr.send("username=" + username + "&num-followers=" + numFollowers);
+
+                  // Handle the response
+                  xhr.onreadystatechange = function () {
+                    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                      // Show Swal.fire popup
+                      Swal.fire({
+                        title: "Sucesso",
+                        text: numFollowers + " seguidores foram adicionados ao usuário " + username,
+                        icon: "success",
+                        confirmButtonText: "OK",
+                      });
+                    } else if (xhr.readyState === XMLHttpRequest.DONE) {
+                      // Show error Swal.fire popup
+                      Swal.fire({
+                        title: "Erro",
+                        text: "Ocorreu um erro ao seguir o usuário",
+                        icon: "error",
+                        confirmButtonText: "OK",
+                      });
+                    }
+                  };
+                }
+
+
                 </script>
                 
                 
@@ -83,6 +110,48 @@
           </form>
           <div id="response"></div>
         </div>
+        <div class="card">
+          <div class="card-header border-0">
+            <h3 class="mb-0">Histórico de Seguidores</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-items-center table-flush" id="followers-history-table">
+              <thead class="thead-light">
+                <tr>
+                  <th>Data e Hora</th>
+                  <th>Usuário Seguido</th>
+                  <th>Quantidade de Seguidores</th>
+                </tr>
+              </thead>
+              <tbody id="followers-history-table-body">
+              </tbody>
+            </table>
+          </div>
+        </div>
+          <script>const followersTableBody = document.querySelector("#followers-history-table-body");
+
+            fetch("/get_history_follow")
+              .then(response => response.json())
+              .then(followersHistory => {
+                followersHistory.forEach(record => {
+                  const row = document.createElement("tr");
+            
+                  const timestampCell = document.createElement("td");
+                  timestampCell.innerText = record.timestamp;
+                  row.appendChild(timestampCell);
+            
+                  const followedUserCell = document.createElement("td");
+                  followedUserCell.innerText = record.target_username;
+                  row.appendChild(followedUserCell);
+            
+                  const numFollowersCell = document.createElement("td");
+                  numFollowersCell.innerText = record.num_followers;
+                  row.appendChild(numFollowersCell);
+            
+                  followersTableBody.appendChild(row);
+                });
+              });
+            </script>        
       </div>
     </div>
   </div>
@@ -96,6 +165,4 @@
 
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
-{% block javascripts %}{% endblock javascripts %}
 

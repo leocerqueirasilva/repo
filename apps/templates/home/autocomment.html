@@ -4,6 +4,21 @@
 
 {% block content %}
 
+{% block javascripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.3.0/dist/sweetalert2.all.min.js"></script>
+
+
+
+{% endblock javascripts %}
+
+{% block stylesheets %}
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+
+
 <div class="header pb-6 d-flex align-items-center" 
      style="min-height: 500px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
   <!-- Mask -->
@@ -42,9 +57,10 @@
             <div class="pl-lg-4">
                 <div class="form-group">
                     <label class="form-control-label" for="account-select">Select Account:</label>
-                    <select class="form-control" id="account-select" name="account">
+                    <select class="form-control" id="account-select" name="account[]" multiple style="height: 150px;">
                       <!-- Opções de seleção serão adicionadas aqui dinamicamente -->
-                  </select>
+                    </select>
+                    
                 </div>
                 <div class="form-group">
                     <label class="form-control-label" for="media-url-input">Instagram Media URL:</label>
@@ -57,29 +73,129 @@
                 <button class="btn btn-primary" type="submit">Submit Comment</button>
             </div>
         </form>
+        <div id="loading-spinner" class="spinner-border text-primary" role="status" style="display:none;">
+          <span class="sr-only">Carregando...</span>
+        </div>
+        
+        
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header border-0">
+          <h3 class="mb-0">Histórico de Solicitações</h3>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush" id="history-table">
+            <thead class="thead-light">
+              <tr>
+                <th>Data e Hora</th>
+                <th>URL da Mídia</th>
+                <th>Número de Contas</th>
+                <th>Comentário</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   </div>
-  <script>
-    let commentForm = document.getElementById("comment-form");
-    commentForm.addEventListener("submit", function(event) {
-        event.preventDefault();
-        let accountSelect = document.getElementById("account-select");
-        let accountId = accountSelect.options[accountSelect.selectedIndex].value;
-        let mediaUrlInput = document.getElementById("media-url-input");
-        let commentInput = document.getElementById("comment-input");
-        let formData = new FormData();
-        formData.append("account", accountId);
-        formData.append("media_url", mediaUrlInput.value);
-        formData.append("comment_text", commentInput.value);
-        fetch("/call_comment", {
-            method: "POST",
-            body: formData
-        }).then(response => {
-            alert("Comment submitted successfully!");
-        });
+
+
+ 
+
+<script>
+  const tableBody = document.querySelector("#history-table-body");
+
+fetch("/get_history_comment")
+  .then(response => response.json())
+  .then(history => {
+    history.forEach(record => {
+      const row = document.createElement("tr");
+
+      const timestampCell = document.createElement("td");
+      timestampCell.innerText = record.timestamp;
+      row.appendChild(timestampCell);
+
+      const mediaUrlCell = document.createElement("td");
+      mediaUrlCell.innerText = record.media_url;
+      row.appendChild(mediaUrlCell);
+
+      const numCommentsCell = document.createElement("td");
+      numCommentsCell.innerText = record.num_comments;
+      row.appendChild(numCommentsCell);
+
+      const commentTextCell = document.createElement("td");
+      commentTextCell.innerText = record.comment_text;
+      row.appendChild(commentTextCell);
+
+      tableBody.appendChild(row);
     });
+  });
+
+</script>
+
+  <script>
+  let commentForm = document.getElementById("comment-form");
+commentForm.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  let accountSelect = document.getElementById("account-select");
+  let selectedAccounts = Array.from(accountSelect.selectedOptions).map((option) => option.value);
+  let mediaUrlInput = document.getElementById("media-url-input");
+  let commentInput = document.getElementById("comment-input");
+
+  let progress = 0;
+  const total = selectedAccounts.length;
+
+  // Mostrar o spinner de carregamento
+  let loadingSpinner = document.getElementById("loading-spinner");
+  loadingSpinner.style.display = "block";
+
+  for (const username of selectedAccounts) {
+    let formData = new FormData();
+    formData.append("accounts", JSON.stringify(selectedAccounts));
+    formData.append("media_url", mediaUrlInput.value);
+    formData.append("comment_text", commentInput.value);
+    formData.append("progress", JSON.stringify(progress));
+
+    await fetch("/call_comment", {
+      method: "POST",
+      body: formData,
+    });
+
+    progress++;
+
+    if (progress === 1) {
+      Swal.fire({
+        title: "Progresso dos Comentários",
+        html: progress + "/" + total + " comentários",
+        icon: "info",
+        allowOutsideClick: false,
+        showCancelButton: false,
+        showConfirmButton: false,
+      });
+    } else {
+      Swal.update({
+        html: progress + "/" + total + " comentários",
+      });
+    }
+  }
+
+  // Ocultar o spinner de carregamento
+  loadingSpinner.style.display = "none";
+
+  Swal.update({
+    icon: "success",
+    confirmButtonText: "OK",
+    allowOutsideClick: true,
+    showCancelButton: false,
+    showConfirmButton: true,
+  });
+});
+
+
+
 
     function loadAccountOptions() {
         let accountSelect = document.getElementById("account-select");
@@ -99,7 +215,16 @@
   
     window.addEventListener("load", loadAccountOptions);
 </script>
-  
+
+<script>
+  $(document).ready(function() {
+    $('#account-select').select2({
+      placeholder: 'Select accounts',
+      allowClear: true
+    });
+  });
+</script>
+
 
 
   {% include "includes/footer.html" %}
@@ -108,6 +233,5 @@
 
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
-{% block javascripts %}{% endblock javascripts %}
+
 

@@ -36,8 +36,9 @@
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Total trafego</h5>
-                      <span class="h2 font-weight-bold mb-0">350,897</span>
+                      <h5 class="card-title text-uppercase text-muted mb-0">Último acesso</h5>
+                      <span class="h2 font-weight-bold mb-0" id="last_request_date">-</span>
+
                     </div>
                     <div class="col-auto">
                       <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow">
@@ -46,8 +47,8 @@
                     </div>
                   </div>
                   <p class="mt-3 mb-0 text-sm">
-                    <span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 3.48%</span>
-                    <span class="text-nowrap">Since last month</span>
+                   
+                    <span class="text-nowrap">Data do Último acesso</span>
                   </p>
                 </div>
               </div>
@@ -58,18 +59,17 @@
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Novos usuários</h5>
-                      <span class="h2 font-weight-bold mb-0">2,356</span>
+                      <h5 class="card-title text-uppercase text-muted mb-0">Total de contas</h5>
+                      <span class="h2 font-weight-bold mb-0" id="user-count"></span>
                     </div>
                     <div class="col-auto">
                       <div class="icon icon-shape bg-gradient-orange text-white rounded-circle shadow">
-                        <i class="ni ni-chart-pie-35"></i>
+                        <i class="fa fa-users"></i>
                       </div>
                     </div>
                   </div>
                   <p class="mt-3 mb-0 text-sm">
-                    <span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 3.48%</span>
-                    <span class="text-nowrap">Since last month</span>
+                    <span class="text-nowrap">Número total de contas</span>
                   </p>
                 </div>
               </div>
@@ -80,22 +80,21 @@
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Vendas</h5>
-                      <span class="h2 font-weight-bold mb-0">924</span>
+                      <h5 class="card-title text-uppercase text-muted mb-0">Total de solicitações</h5>
+                      <span class="h2 font-weight-bold mb-0" id="total-requests"></span>
                     </div>
                     <div class="col-auto">
-                      <div class="icon icon-shape bg-gradient-green text-white rounded-circle shadow">
-                        <i class="ni ni-money-coins"></i>
+                      <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow">
+                        <i class="ni ni-active-40"></i>
                       </div>
                     </div>
                   </div>
                   <p class="mt-3 mb-0 text-sm">
-                    <span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 3.48%</span>
-                    <span class="text-nowrap">Since last month</span>
+                    <span class="text-nowrap">Número total de solicitações</span>
                   </p>
                 </div>
               </div>
-            </div>
+            </div>            
             <div class="col-xl-3 col-md-6">
               <div class="card card-stats">
                 <!-- Card body -->
@@ -122,6 +121,67 @@
         </div>
       </div>
     </div>
+    <script>
+      // Função para formatar a data em uma string mais legível
+      function formatDate(date) {
+        const options = {  month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+        return new Date(date).toLocaleDateString(undefined, options);
+      }
+    
+      // Função para buscar a data da última solicitação e atualizar a exibição
+      async function fetchLastRequestDate() {
+        try {
+          const response = await fetch('/get_last_request_date');
+          const data = await response.json();
+          const lastRequestDate = formatDate(data.last_request_date);
+    
+          document.getElementById('last_request_date').innerText = lastRequestDate;
+        } catch (error) {
+          console.error('Erro ao buscar a data da última solicitação:', error);
+        }
+      }
+    
+      // Chamar a função ao carregar a página
+      fetchLastRequestDate();
+    </script>
+    
+
+    <script>
+      // ... (código JS existente) ...
+    
+      // Obtenha o elemento do total de solicitações
+      const totalRequestsElement = document.querySelector("#total-requests");
+    
+      // Busque o número total de solicitações do servidor
+      fetch("/get_total_requests")
+        .then(response => response.json())
+        .then(data => {
+          // Atualize o elemento do total de solicitações com o número total de solicitações
+          totalRequestsElement.innerText = data.total_requests;
+        });
+    </script>
+    
+    <script> 
+      // Get the user count element
+      const userCount = document.querySelector("#user-count");
+
+      // Fetch the accounts data from the server
+      fetch("/get_accounts")
+        .then(response => response.json())
+        .then(accounts => {
+          // Update the user count element with the total number of users
+          userCount.innerText = `${accounts.length} `;
+
+          // Loop through the accounts data and create a new row for each account
+          accounts.forEach(account => {
+            // ... (o restante do código permanece o mesmo)
+          });
+        });
+
+    </script>
+
+
+
 
     <!-- Page content -->
     <div class="container-fluid mt--6">
