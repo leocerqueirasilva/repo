@@ -103,3 +103,4 @@ wsproto==1.2.0
 WTForms==2.3.3
 sendgrid
 flask_mail
+smtplib
