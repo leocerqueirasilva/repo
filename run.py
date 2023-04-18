@@ -17,7 +17,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import render_template
 from sqlalchemy import create_engine
 from sqlalchemy.engine import reflection
-from apps.home.models import Account, LikeHistory, CommentHistory, FollowHistory, VoteHistory
+from apps.home.models import Account, LikeHistory, CommentHistory, FollowHistory, VoteHistory, StoryLikeHistory
 import requests
 from instagrapi.mixins.challenge import ChallengeChoice
 from instagrapi.mixins.challenge import ChallengeRequired
@@ -46,7 +46,8 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-
+from itertools import cycle
+from random import sample
 
 
 app = Flask(__name__, template_folder='templates')
@@ -288,6 +289,23 @@ def get_history_follow():
 
 
 
+@app.route("/get_story_like_history", methods=['GET'])
+def get_story_like_history():
+    history = StoryLikeHistory.query.order_by(StoryLikeHistory.timestamp.desc()).all()
+    result = []
+
+    for record in history:
+        result.append({
+            'timestamp': record.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'story_url': record.story_url,
+            'num_accounts': record.num_accounts
+        })
+
+    return jsonify(result)
+
+
+
+
 @app.route("/comment_form")
 def comment_form():
     accounts = Account.query.all()
@@ -300,33 +318,46 @@ def comment_form():
 
 #Comment menssagee
 
+
 @app.route("/call_comment", methods=['POST'])
 def call_comment():
-    accounts = json.loads(request.form.get('accounts'))
+    num_accounts = int(request.form.get('num_accounts'))
     media_url = request.form.get('media_url')
-    comment_text = request.form.get('comment_text')
-    progress = json.loads(request.form.get('progress'))
+    progress = 0
+    comments = []
 
-    for username in accounts:
-        account = Account.query.filter_by(username=username).first()
-        if account:
-            settings = eval(account.setting)
-            cl = Client(settings)
-            cl.login(account.username, account.password)
-            media_id = cl.media_id(cl.media_pk_from_url(media_url))
-            cl.media_comment(media_id, comment_text)
+    accounts = Account.query.all()
+    selected_accounts = random.sample(accounts, min(num_accounts, len(accounts)))
+   
 
-    if progress == 0:
+
+    for i, account in enumerate(selected_accounts):
+        comment_text = request.form.get(f'comment_{i + 1}')
+        settings = eval(account.setting)
+        cl = Client(settings)
+        cl.login(account.username, account.password)
+        media_id = cl.media_id(cl.media_pk_from_url(media_url))
+        cl.media_comment(media_id, comment_text)
+        print(account)
+        progress += 1
+        print(progress)
+        print(comment_text)
+        comments.append(comment_text)
+
+    if progress > 0:
         # Adicionando o registro ao histórico de comentários
         history_record = CommentHistory(
             media_url=media_url,
-            num_comments=len(accounts),
-            comment_text=comment_text
+            num_comments=len(selected_accounts),
+            comment_text=",".join(comments)
         )
         db.session.add(history_record)
         db.session.commit()
 
-    return jsonify(success=True)
+    return jsonify({"progress": progress})
+
+
+
 
 
 
@@ -414,15 +445,26 @@ def user_follow():
 
 @app.route("/like_stories", methods=['POST'])
 def like_stories():
-    story_url = request.json['storyUrl']
-    accounts = Account.query.all()
+    data = request.json
+    story_url = data['storyUrl']
+    num_accounts_to_like = int(data['numAccounts'])
+
+    all_accounts = Account.query.all()
+    accounts = sample(all_accounts, num_accounts_to_like)
+
     for account in accounts:
         settings = eval(account.setting)
         cl = Client(settings)
         cl.login(account.username, account.password)
         id_storie = cl.story_pk_from_url(story_url)
         cl.story_like(id_storie)
-        return jsonify({'message': 'success'})
+
+    # Após a solicitação de curtidas de histórias bem-sucedida, adicione o registro ao histórico
+    history_record = StoryLikeHistory(story_url=story_url, num_accounts=num_accounts_to_like)
+    db.session.add(history_record)
+    db.session.commit()
+
+    return jsonify({'message': 'success'})
         
 
 

@@ -55,24 +55,26 @@
           <form id="comment-form" method="POST" action="/call_comment">
             <h6 class="heading-small text-muted mb-4">Post Information</h6>
             <div class="pl-lg-4">
-                <div class="form-group">
-                    <label class="form-control-label" for="account-select">Select Account:</label>
-                    <select class="form-control" id="account-select" name="account[]" multiple style="height: 150px;">
-                      <!-- Opções de seleção serão adicionadas aqui dinamicamente -->
-                    </select>
-                    
+              <div class="form-group">
+                <label class="form-control-label" for="num-accounts">Quantidade de contas:</label>
+                <input type="number" id="num-accounts" name="num-accounts" min="1" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label class="form-control-label" for="media-url-input">Instagram Media URL:</label>
+                <input type="text" id="media-url-input" class="form-control" placeholder="Instagram Media URL">
+              </div>
+              <div id="comment-fields-container">
+                <div class="form-group comment-field">
+                  <label class="form-control-label" for="comment-1">Comentário da Conta 1:</label>
+                  <input type="text" id="comment-1" name="comment-1" class="form-control comment-input" placeholder="Comment Text">
                 </div>
-                <div class="form-group">
-                    <label class="form-control-label" for="media-url-input">Instagram Media URL:</label>
-                    <input type="text" id="media-url-input" class="form-control" placeholder="Instagram Media URL">
-                </div>
-                <div class="form-group">
-                    <label class="form-control-label" for="comment-input">Comment Text:</label>
-                    <input type="text" id="comment-input" class="form-control" placeholder="Comment Text">
-                </div>
-                <button class="btn btn-primary" type="submit">Submit Comment</button>
+              </div>
+              <button type="button" id="add-comment-btn" class="btn btn-secondary">Adicionar comentário</button>
+              <button class="btn btn-primary" type="submit">Submit Comment</button>
             </div>
-        </form>
+          </form>
+          
+          
         <div id="loading-spinner" class="spinner-border text-primary" role="status" style="display:none;">
           <span class="sr-only">Carregando...</span>
         </div>
@@ -91,7 +93,7 @@
                 <th>Data e Hora</th>
                 <th>URL da Mídia</th>
                 <th>Número de Contas</th>
-                <th>Comentário</th>
+                <th>Comentários</th>
               </tr>
             </thead>
             <tbody id="history-table-body">
@@ -138,61 +140,101 @@ fetch("/get_history_comment")
 
   <script>
   let commentForm = document.getElementById("comment-form");
-commentForm.addEventListener("submit", async function (event) {
-  event.preventDefault();
-  let accountSelect = document.getElementById("account-select");
-  let selectedAccounts = Array.from(accountSelect.selectedOptions).map((option) => option.value);
-  let mediaUrlInput = document.getElementById("media-url-input");
-  let commentInput = document.getElementById("comment-input");
+  document.addEventListener("DOMContentLoaded", function () {
+  const commentForm = document.getElementById("comment-form");
+  const addCommentBtn = document.getElementById("add-comment-btn");
+  const commentFieldsContainer = document.getElementById("comment-fields-container");
 
-  let progress = 0;
-  const total = selectedAccounts.length;
+  let commentCount = 1;
 
-  // Mostrar o spinner de carregamento
-  let loadingSpinner = document.getElementById("loading-spinner");
-  loadingSpinner.style.display = "block";
+  addCommentBtn.addEventListener("click", function () {
+    commentCount++;
 
-  for (const username of selectedAccounts) {
+    const newCommentField = document.createElement("div");
+    newCommentField.classList.add("form-group", "comment-field");
+
+    const newLabel = document.createElement("label");
+    newLabel.setAttribute("for", `comment-${commentCount}`);
+    newLabel.textContent = `Comentário da Conta ${commentCount}:`;
+
+    const newInput = document.createElement("input");
+    newInput.setAttribute("type", "text");
+    newInput.setAttribute("id", `comment-${commentCount}`);
+    newInput.setAttribute("name", `comment-${commentCount}`);
+    newInput.classList.add("form-control", "comment-input");
+    newInput.setAttribute("placeholder", "Comment Text");
+
+    newCommentField.appendChild(newLabel);
+    newCommentField.appendChild(newInput);
+    commentFieldsContainer.appendChild(newCommentField);
+  });
+
+  commentForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    let numAccountsInput = document.getElementById("num-accounts");
+    let numAccounts = numAccountsInput.value;
+    let mediaUrlInput = document.getElementById("media-url-input");
+
+    let numComments = commentFieldsContainer.querySelectorAll(".comment-field").length;
+
+    const total = numAccounts;
+
+    const swalInstance = Swal.fire({
+      title: "Progresso dos Comentários",
+      html: `0/${total} comentários`,
+      icon: "info",
+      showCancelButton: false,
+      showConfirmButton: false,
+      allowEscapeKey: false,
+      allowOutsideClick: false,
+      onBeforeOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
     let formData = new FormData();
-    formData.append("accounts", JSON.stringify(selectedAccounts));
+    formData.append("num_accounts", numAccounts);
     formData.append("media_url", mediaUrlInput.value);
-    formData.append("comment_text", commentInput.value);
-    formData.append("progress", JSON.stringify(progress));
+
+    for (let i = 0; i < numAccounts; i++) {
+      let commentInput = document.getElementById(`comment-${(i % numComments) + 1}`);
+      formData.append(`comment_${i + 1}`, commentInput.value);
+    }
 
     await fetch("/call_comment", {
       method: "POST",
       body: formData,
+    }).then(async (response) => {
+      if (response.ok) {
+        let progressData = await response.json();
+        let progress = progressData.progress;
+
+        Swal.update({
+          html: `${progress}/${total} comentários`,
+          icon: "success",
+        });
+
+        setTimeout(() => {
+          Swal.close();
+        }, 2000);
+      } else {
+        Swal.update({
+          title: "Erro",
+          text: "Erro ao realizar comentários",
+          icon: "error",
+          showCancelButton: false,
+          showConfirmButton: true,
+          allowEscapeKey: true,
+          allowOutsideClick: true,
+        });
+      }
     });
-
-    progress++;
-
-    if (progress === 1) {
-      Swal.fire({
-        title: "Progresso dos Comentários",
-        html: progress + "/" + total + " comentários",
-        icon: "info",
-        allowOutsideClick: false,
-        showCancelButton: false,
-        showConfirmButton: false,
-      });
-    } else {
-      Swal.update({
-        html: progress + "/" + total + " comentários",
-      });
-    }
-  }
-
-  // Ocultar o spinner de carregamento
-  loadingSpinner.style.display = "none";
-
-  Swal.update({
-    icon: "success",
-    confirmButtonText: "OK",
-    allowOutsideClick: true,
-    showCancelButton: false,
-    showConfirmButton: true,
   });
 });
+
+
+
 
 
 

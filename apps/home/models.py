@@ -59,5 +59,13 @@ class VoteHistory(db.Model):
 
 
 
+class StoryLikeHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    story_url = db.Column(db.String(500), nullable=False)
+    num_accounts = db.Column(db.Integer, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone('America/Sao_Paulo')))
+
+
+
 
 
